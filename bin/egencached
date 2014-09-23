@@ -1,0 +1,67 @@
+#!/bin/sh
+
+set -e -x
+
+PATH=${PATH}:/home/mgorny/bin
+
+src=/home/mgorny/dev-git.git
+wc=/home/mgorny/user-wc
+dst=/home/mgorny/user-git.git
+sign_key='C3228651!'
+
+# daemon stuff
+# we could use systemd instead of reinventing the wheel one day...
+pidfile=/home/mgorny/egencache.pid
+manifestd_pidfile=/home/mgorny/manifestd.pid
+echo "$$" >${pidfile}
+
+fakepipe=/home/mgorny/egencache.pipe
+rm -f "${fakepipe}"
+mkfifo "${fakepipe}"
+
+unset want_exit want_regen
+trap 'want_exit=1' INT TERM
+trap 'want_regen=1' HUP
+
+# the main loop
+cd "${wc}"
+while :; do
+	# wait for a signal
+	# (this will fail when signal comes)
+	read <"${fakepipe}" || :
+
+	if [ -n "${want_exit}" ]; then
+		break
+	fi
+
+	if [ -n "${want_regen}" ]; then
+		# update the rsync repo
+		git pull --commit -S"${sign_key}" --no-edit --quiet "${src}" master
+
+		# allow interrupting during boring cache regen
+		trap 'exit 1' INT TERM
+
+		# run egencache
+		egencache --update --update-use-local-desc --jobs=4 \
+			--portdir="${wc}" --repo=gentoo
+
+		# restore safe termination handler
+		trap 'want_exit=1' INT TERM
+
+		# add untracked files
+		git add -A
+
+		# commit if there's anything to commit
+		git diff --exit-code --quiet --cached || \
+		git commit -q -S"${sign_key}" -m 'Cache update'
+
+		git push "${dst}" master
+
+		kill -HUP "$(cat "${manifestd_pidfile}")" || :
+
+		unset want_regen
+	fi
+done
+
+rm -f "${pidfile}" "${fakepipe}"
+exit 0

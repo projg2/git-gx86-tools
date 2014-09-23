@@ -1,0 +1,68 @@
+#!/bin/sh
+
+set -e -x
+
+PATH=${PATH}:/home/mgorny/bin
+
+src=/home/mgorny/user-git.git
+wc=/home/mgorny/rsync-wc
+dst=/home/mgorny/rsync-mirror
+sign_key='C3228651!'
+
+# daemon stuff
+# we could use systemd instead of reinventing the wheel one day...
+pidfile=/home/mgorny/manifestd.pid
+echo "$$" >${pidfile}
+
+fakepipe=/home/mgorny/manifestd.pipe
+rm -f "${fakepipe}"
+mkfifo "${fakepipe}"
+
+unset want_exit want_regen
+trap 'want_exit=1' INT TERM
+trap 'want_regen=1' HUP
+
+# the main loop
+cd "${wc}"
+while :; do
+	# wait for a signal
+	# (this will fail when signal comes)
+	read <"${fakepipe}" || :
+
+	if [ -n "${want_exit}" ]; then
+		break
+	fi
+
+	if [ -n "${want_regen}" ]; then
+		prev_id=$(git rev-parse master)
+
+		# update the rsync repo
+		git pull -s manifest \
+			--commit -S"${sign_key}" --no-edit --quiet "${src}" master
+
+		files=$(git diff --name-only "${prev_id}"..master \
+				| cut -d/ -f1-2 | uniq \
+				| sed -e '/^profiles/d' -e '/^metadata/d' -e '/^eclass/d' -e '/^licenses/d' -e '/^scripts/d' -e '/^[^/]*$/d')
+
+		# update Manifests
+		for f in ${files}; do
+			[ -d "${f}" ] || continue
+			( cd "${f}"; repoman manifest )
+			gpg --sign --digest-algo SHA256 --clearsign --yes \
+				--default-key "${sign_key}" "${f}"/Manifest
+			mv "${f}"/Manifest.asc "${f}"/Manifest
+			git add "${f}"/Manifest
+		done
+
+		# commit if there's anything to commit
+		git diff --exit-code --quiet --cached || \
+		git commit -q -m 'Thicken and sign the Manifests'
+
+		( cd "${dst}"; git pull --ff-only "${wc}" master )
+
+		unset want_regen
+	fi
+done
+
+rm -f "${pidfile}" "${fakepipe}"
+exit 0
