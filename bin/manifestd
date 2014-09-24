@@ -67,7 +67,7 @@ while :; do
 		git diff --exit-code --quiet --cached || \
 		git commit -q -m 'Thicken and sign the Manifests'
 
-		( cd "${dst}"; git pull --ff-only "${wc}" master )
+		( cd "${dst}"; git pull --ff-only --quiet "${wc}" master )
 	fi
 done
 
