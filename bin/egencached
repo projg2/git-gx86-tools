@@ -35,6 +35,8 @@ while :; do
 	fi
 
 	if [ -n "${want_regen}" ]; then
+		unset want_regen
+
 		# update the rsync repo
 		git pull --commit -S"${sign_key}" --no-edit --quiet "${src}" master
 
@@ -58,8 +60,6 @@ while :; do
 		git push "${dst}" master
 
 		kill -HUP "$(cat "${manifestd_pidfile}")" || :
-
-		unset want_regen
 	fi
 done
 

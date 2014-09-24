@@ -34,6 +34,8 @@ while :; do
 	fi
 
 	if [ -n "${want_regen}" ]; then
+		unset want_regen
+
 		prev_id=$(git rev-parse master)
 
 		# update the rsync repo
@@ -66,8 +68,6 @@ while :; do
 		git commit -q -m 'Thicken and sign the Manifests'
 
 		( cd "${dst}"; git pull --ff-only "${wc}" master )
-
-		unset want_regen
 	fi
 done
 
