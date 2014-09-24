@@ -37,8 +37,15 @@ while :; do
 		prev_id=$(git rev-parse master)
 
 		# update the rsync repo
-		git pull -s recursive -X theirs \
+		if ! git pull -s recursive -X theirs \
 			--commit -S"${sign_key}" --no-edit --quiet "${src}" master
+		then
+			# failed merge? likely modify/delete case
+			moddel=$(git status --porcelain | grep ^UD | cut -d' ' -f2)
+			[ -n "${moddel}" ]
+			git rm ${moddel}
+			git commit -S"${sign_key}" --no-edit --quiet
+		fi
 
 		files=$(git diff --name-only "${prev_id}"..master \
 				| cut -d/ -f1-2 | uniq \
