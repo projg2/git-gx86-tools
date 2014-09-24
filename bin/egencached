@@ -34,7 +34,7 @@ while :; do
 		break
 	fi
 
-	if [ -n "${want_regen}" ]; then
+	while [ -n "${want_regen}" ]; do
 		unset want_regen
 
 		# update the rsync repo
@@ -60,7 +60,7 @@ while :; do
 		git push "${dst}" master
 
 		kill -HUP "$(cat "${manifestd_pidfile}")" || :
-	fi
+	done
 done
 
 rm -f "${pidfile}" "${fakepipe}"

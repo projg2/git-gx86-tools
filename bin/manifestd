@@ -33,7 +33,7 @@ while :; do
 		break
 	fi
 
-	if [ -n "${want_regen}" ]; then
+	while [ -n "${want_regen}" ]; do
 		unset want_regen
 
 		prev_id=$(git rev-parse master)
@@ -68,7 +68,7 @@ while :; do
 		git commit -q -m 'Thicken and sign the Manifests'
 
 		( cd "${dst}"; git pull --ff-only --quiet "${wc}" master )
-	fi
+	done
 done
 
 rm -f "${pidfile}" "${fakepipe}"
