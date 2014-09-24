@@ -2,7 +2,16 @@
 
 set -e -x
 
-PATH=${PATH}:/home/mgorny/bin
+admin=mgorny@gentoo.org
+trap "sendmail ${admin} <<_EOF_
+Subject: Script failure notice: ${0}
+
+Hello, Master.
+
+It seems that ${0} has exited unexpectedly.
+_EOF_" EXIT
+
+PATH=${PATH}:/usr/sbin:/home/mgorny/bin
 
 src=/home/mgorny/dev-git.git
 wc=/home/mgorny/user-wc
@@ -64,4 +73,5 @@ while :; do
 done
 
 rm -f "${pidfile}" "${fakepipe}"
+trap - EXIT
 exit 0
