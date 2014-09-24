@@ -37,7 +37,7 @@ while :; do
 		prev_id=$(git rev-parse master)
 
 		# update the rsync repo
-		git pull -s manifest \
+		git pull -s recursive -X theirs \
 			--commit -S"${sign_key}" --no-edit --quiet "${src}" master
 
 		files=$(git diff --name-only "${prev_id}"..master \
