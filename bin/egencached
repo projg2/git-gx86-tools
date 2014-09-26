@@ -18,6 +18,12 @@ wc=/home/mgorny/user-wc
 dst=/home/mgorny/user-git.git
 sign_key='C3228651!'
 
+news_repo=/home/mgorny/gentoo-news
+cvs_repo=/home/mgorny/gentoo
+dtd_repo=${cvs_repo}/xml/htdocs/dtd
+glsa_repo=${cvs_repo}/xml/htdocs/security/en/glsa
+herds_repo=${cvs_repo}/xml/htdocs/proj/en/metastructure/herds
+
 # daemon stuff
 # we could use systemd instead of reinventing the wheel one day...
 pidfile=/home/mgorny/egencache.pid
@@ -49,6 +55,26 @@ while :; do
 		# update the rsync repo
 		git pull --commit -S"${sign_key}" --no-edit --quiet "${src}" master
 
+		# update news
+		( cd "${news_repo}"; git pull --ff-only )
+		# merge the non-sense structure...
+		tmpdir=$(mktemp -d)
+		cp -r "${news_repo}"/*/. "${tmpdir}"/
+		rsync -r --delete "${tmpdir}"/. metadata/news
+		rm -rf "${tmpdir}"
+
+		# update dtds
+		( cd "${dtd_repo}"; cvs up -dP )
+		rsync -r --delete --exclude=CVS "${dtd_repo}"/. metadata/dtd
+
+		# update glsas
+		( cd "${glsa_repo}"; cvs up -dP )
+		rsync -r --delete --exclude=CVS "${glsa_repo}"/. metadata/glsa
+
+		# update herds.xml
+		( cd "${herds_repo}"; cvs up -dP herds.xml )
+		cp "${herds_repo}"/herds.xml metadata/herds.xml
+
 		# allow interrupting during boring cache regen
 		trap 'exit 1' INT TERM
 
@@ -64,7 +90,7 @@ while :; do
 
 		# commit if there's anything to commit
 		git diff --exit-code --quiet --cached || \
-		git commit -q -S"${sign_key}" -m 'Cache update'
+		git commit -q -S"${sign_key}" -m 'Metadata update'
 
 		git push "${dst}" master
 
