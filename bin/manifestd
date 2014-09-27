@@ -85,4 +85,5 @@ while :; do
 done
 
 rm -f "${pidfile}"
+trap - EXIT
 exit 0
