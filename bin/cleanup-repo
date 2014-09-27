@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -e -x
+
+sign_key=
+
+# we must be run in git checkout
+[ -d .git ]
+# and have proper layout.conf already
+grep -q thin-manifest metadata/layout.conf
+
+# use thin Manifests
+find -type f -name 'Manifest' -exec sed -i -n -e '/^DIST /p' {} +
+git commit -a -S"${sign_key}" -q -m 'Convert to thin Manifests'
+
+# remove ChangeLogs
+find -type f -name 'ChangeLog*' -delete
+git commit -a -S"${sign_key}" -q -m 'Remove ChangeLogs'
+
+# clean up some stale $Header$ stuff
+find -type f -exec sed -i -e '/^# $Header/d' -e '/^# $Id/d' {} +
+git commit -a -S"${sign_key}" -q -m 'Remove stale $Header$ tags'
