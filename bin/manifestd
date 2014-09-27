@@ -10,6 +10,7 @@ Subject: Script failure notice: ${0}
 Hello, Master.
 
 It seems that ${0} has exited unexpectedly.
+
 \$(tail -n 30 \"\${log}\")
 _EOF_" EXIT
 
