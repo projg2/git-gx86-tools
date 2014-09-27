@@ -23,10 +23,6 @@ sign_key='C3228651!'
 pidfile=/home/mgorny/manifestd.pid
 echo "$$" >${pidfile}
 
-fakepipe=/home/mgorny/manifestd.pipe
-rm -f "${fakepipe}"
-mkfifo "${fakepipe}"
-
 unset want_exit want_regen
 trap 'want_exit=1' INT TERM
 trap 'want_regen=1' HUP
@@ -34,9 +30,10 @@ trap 'want_regen=1' HUP
 # the main loop
 cd "${wc}"
 while :; do
-	# wait for a signal
-	# (this will fail when signal comes)
-	read <"${fakepipe}" || :
+	# wait for a signal or try every 10 minutes
+	sleep 600 &
+	sleeppid=$!
+	wait && want_regen=1 || kill "${sleeppid}"
 
 	if [ -n "${want_exit}" ]; then
 		break
@@ -80,5 +77,5 @@ while :; do
 	done
 done
 
-rm -f "${pidfile}" "${fakepipe}"
+rm -f "${pidfile}"
 exit 0

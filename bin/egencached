@@ -30,10 +30,6 @@ pidfile=/home/mgorny/egencache.pid
 manifestd_pidfile=/home/mgorny/manifestd.pid
 echo "$$" >${pidfile}
 
-fakepipe=/home/mgorny/egencache.pipe
-rm -f "${fakepipe}"
-mkfifo "${fakepipe}"
-
 unset want_exit want_regen
 trap 'want_exit=1' INT TERM
 trap 'want_regen=1' HUP
@@ -42,8 +38,9 @@ trap 'want_regen=1' HUP
 cd "${wc}"
 while :; do
 	# wait for a signal
-	# (this will fail when signal comes)
-	read <"${fakepipe}" || :
+	sleep 600 &
+	sleeppid=$!
+	wait || kill "${sleeppid}"
 
 	if [ -n "${want_exit}" ]; then
 		break
@@ -98,6 +95,6 @@ while :; do
 	done
 done
 
-rm -f "${pidfile}" "${fakepipe}"
+rm -f "${pidfile}"
 trap - EXIT
 exit 0
