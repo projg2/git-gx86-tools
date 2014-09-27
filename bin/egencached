@@ -44,10 +44,10 @@ trap 'want_regen=1' HUP
 # the main loop
 cd "${wc}"
 while :; do
-	# wait for a signal
+	# wait for a signal or try every 10 minutes
 	sleep 600 &
 	sleeppid=$!
-	wait || kill "${sleeppid}"
+	wait && want_regen=1 || kill "${sleeppid}"
 
 	if [ -n "${want_exit}" ]; then
 		break
