@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e -x
 
+log=/home/mgorny/manifestd.log
 admin=mgorny@gentoo.org
 trap "sendmail ${admin} <<_EOF_
 Subject: Script failure notice: ${0}
@@ -9,7 +10,12 @@ Subject: Script failure notice: ${0}
 Hello, Master.
 
 It seems that ${0} has exited unexpectedly.
+\$(tail -n 30 \"\${log}\")
 _EOF_" EXIT
+
+exec &>> >(tee "${log}")
+
+date +'%Y-%m-%d %H:%M:%S'
 
 PATH=${PATH}:/usr/sbin:/home/mgorny/bin
 
