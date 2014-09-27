@@ -56,6 +56,8 @@ while :; do
 	while [ -n "${want_regen}" ]; do
 		unset want_regen
 
+		prev_id=$(git rev-parse master)
+
 		# update the rsync repo
 		git pull --commit -S"${sign_key}" --no-edit --quiet "${src}" master
 
@@ -78,6 +80,9 @@ while :; do
 		# update herds.xml
 		( cd "${herds_repo}"; cvs up -dP herds.xml )
 		cp "${herds_repo}"/herds.xml metadata/herds.xml
+
+		# check if we did find any changes
+		git diff --exit-code --quiet "${prev_id}" && break
 
 		# allow interrupting during boring cache regen
 		trap 'exit 1' INT TERM
