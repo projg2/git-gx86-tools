@@ -2,7 +2,7 @@
 
 set -e -x
 
-log=/home/mgorny/manifestd.log
+log=/home/mgorny/egencached.log
 admin=mgorny@gentoo.org
 trap "sendmail ${admin} <<_EOF_
 Subject: Script failure notice: ${0}
