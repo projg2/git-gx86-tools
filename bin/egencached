@@ -23,6 +23,7 @@ src=/home/mgorny/dev-git.git
 wc=/home/mgorny/user-wc
 dst=/home/mgorny/user-git.git
 sign_key='C3228651!'
+no_jobs=4
 
 news_repo=/home/mgorny/gentoo-news
 cvs_repo=/home/mgorny/gentoo
@@ -82,7 +83,7 @@ while :; do
 		trap 'exit 1' INT TERM
 
 		# run egencache
-		egencache --update --update-use-local-desc --jobs=4 \
+		egencache --update --update-use-local-desc --jobs="${no_jobs}" \
 			--portdir="${wc}" --repo=gentoo
 
 		# restore safe termination handler
