@@ -88,7 +88,8 @@ while :; do
 		cp "${herds_repo}"/herds.xml metadata/herds.xml
 
 		# check if we did find any changes
-		git diff --exit-code --quiet "${prev_id}" && break
+		git add -A
+		git diff --exit-code --quiet --cached "${prev_id}" && break
 
 		# allow interrupting during boring cache regen
 		trap 'exit 1' INT TERM
