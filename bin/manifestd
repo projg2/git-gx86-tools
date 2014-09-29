@@ -90,6 +90,9 @@ while :; do
 		git push "${dst}" master
 
 		( cd "${mirror}"; git pull --ff-only --quiet "${dst}" master )
+
+		# push to github as well
+		( cd "${dst}"; git push origin master )
 	done
 
 	# wait for a signal or try every 10 minutes

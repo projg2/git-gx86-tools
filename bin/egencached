@@ -109,6 +109,9 @@ while :; do
 		git push "${dst}" master
 
 		kill -HUP "$(cat "${manifestd_pidfile}")" || :
+
+		# push to github as well
+		( cd "${dst}"; git push origin master )
 	done
 
 	# wait for a signal or try every 10 minutes
