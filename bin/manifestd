@@ -30,7 +30,10 @@ sign_key='C3228651!'
 pidfile=/home/mgorny/manifestd.pid
 echo "$$" >${pidfile}
 
-unset want_exit want_regen
+unset want_exit
+# do a run at start
+want_regen=1
+
 trap 'want_exit=1' INT TERM
 trap 'want_regen=1' HUP
 
@@ -45,11 +48,6 @@ fi
 # the main loop
 cd "${wc}"
 while :; do
-	# wait for a signal or try every 10 minutes
-	sleep 600 &
-	sleeppid=$!
-	wait && want_regen=1 || kill "${sleeppid}"
-
 	if [ -n "${want_exit}" ]; then
 		break
 	fi
@@ -90,6 +88,11 @@ while :; do
 
 		( cd "${dst}"; git pull --ff-only --quiet "${wc}" master )
 	done
+
+	# wait for a signal or try every 10 minutes
+	sleep 600 &
+	sleeppid=$!
+	wait && want_regen=1 || kill "${sleeppid}"
 done
 
 rm -f "${pidfile}"

@@ -38,7 +38,10 @@ pidfile=/home/mgorny/egencache.pid
 manifestd_pidfile=/home/mgorny/manifestd.pid
 echo "$$" >${pidfile}
 
-unset want_exit want_regen
+unset want_exit
+# do a run at start
+want_regen=1
+
 trap 'want_exit=1' INT TERM
 trap 'want_regen=1' HUP
 
@@ -50,11 +53,6 @@ fi
 # the main loop
 cd "${wc}"
 while :; do
-	# wait for a signal or try every 10 minutes
-	sleep 600 &
-	sleeppid=$!
-	wait && want_regen=1 || kill "${sleeppid}"
-
 	if [ -n "${want_exit}" ]; then
 		break
 	fi
@@ -112,6 +110,11 @@ while :; do
 
 		kill -HUP "$(cat "${manifestd_pidfile}")" || :
 	done
+
+	# wait for a signal or try every 10 minutes
+	sleep 600 &
+	sleeppid=$!
+	wait && want_regen=1 || kill "${sleeppid}"
 done
 
 rm -f "${pidfile}"
