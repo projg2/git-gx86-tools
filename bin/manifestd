@@ -84,7 +84,7 @@ while :; do
 
 		# commit if there's anything to commit
 		git diff --exit-code --quiet --cached || \
-		git commit -q -m 'Thicken and sign the Manifests'
+		git commit -q -S"${sign_key}" -m 'Thicken and sign the Manifests'
 
 		( cd "${dst}"; git pull --ff-only --quiet "${wc}" master )
 	done
