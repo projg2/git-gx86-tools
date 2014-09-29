@@ -20,9 +20,10 @@ date +'%Y-%m-%d %H:%M:%S'
 
 PATH=${PATH}:/usr/sbin:/home/mgorny/bin
 
-src=/home/mgorny/user-git.git
-wc=/home/mgorny/rsync-wc
-dst=/home/mgorny/rsync-mirror
+src=/home/mgorny/user.git
+wc=/tmp/rsync-wc
+dst=/home/mgorny/rsync.git
+mirror=/tmp/rsync-mirror
 sign_key='C3228651!'
 
 # daemon stuff
@@ -86,7 +87,9 @@ while :; do
 		git diff --exit-code --quiet --cached || \
 		git commit -q -S"${sign_key}" -m 'Thicken and sign the Manifests'
 
-		( cd "${dst}"; git pull --ff-only --quiet "${wc}" master )
+		git push "${dst}" master
+
+		( cd "${mirror}"; git pull --ff-only --quiet "${dst}" master )
 	done
 
 	# wait for a signal or try every 10 minutes

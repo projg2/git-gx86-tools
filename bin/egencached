@@ -20,11 +20,11 @@ date +'%Y-%m-%d %H:%M:%S'
 
 PATH=${PATH}:/usr/sbin:/home/mgorny/bin
 
-src=/home/mgorny/dev-git.git
-wc=/home/mgorny/user-wc
-dst=/home/mgorny/user-git.git
+src=/home/mgorny/dev.git
+wc=/tmp/user-wc
+dst=/home/mgorny/user.git
 sign_key='C3228651!'
-no_jobs=4
+no_jobs=128
 
 news_repo=/home/mgorny/gentoo-news
 cvs_repo=/home/mgorny/gentoo
