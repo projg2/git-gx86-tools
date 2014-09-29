@@ -34,6 +34,14 @@ unset want_exit want_regen
 trap 'want_exit=1' INT TERM
 trap 'want_regen=1' HUP
 
+# wc and mirror may be on tmpfs
+if [ ! -d "${wc}" ]; then
+	git clone -s "${dst}" "${wc}"
+fi
+if [ ! -d "${mirror}" ]; then
+	git clone -s "${dst}" "${mirror}"
+fi
+
 # the main loop
 cd "${wc}"
 while :; do
