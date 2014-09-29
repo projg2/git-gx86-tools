@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e -x
+# Warning: globbing disabled
+set -e -x -f
 
 log=/home/mgorny/manifestd.log
 admin=mgorny@gentoo.org
