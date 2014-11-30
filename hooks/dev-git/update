@@ -64,6 +64,22 @@ case ${refname} in
 					echo "*** ChangeLogs are not allowed in the repository"
 					exit 1
 					;;
+				metadata/*cache*)
+					echo "*** Metadata Cache is not allowed in the repository"
+					exit 1
+					;;
+				metadata/glsa*)
+					echo "*** GLSAs are not allowed in the repository"
+					exit 1
+					;;
+				metadata/news*)
+					echo "*** News is not allowed in the repository"
+					exit 1
+					;;
+				metadata/herds.xml|metadata/dtd*|metadata/timestamp*)
+					echo "*** Metadata is not allowed in the repository"
+					exit 1
+					;;
 			esac
 		done
 
