@@ -20,15 +20,6 @@ if [ -z "${refname}" -o -z "${oldrev}" -o -z "${newrev}" ]; then
 	exit 1
 fi
 
-# check for no description
-projectdesc=$(sed -e '1q' "${GIT_DIR}/description")
-case ${projectdesc} in
-	"Unnamed repository"* | "")
-		echo "*** Project description file hasn't been set" >&2
-		exit 1
-		;;
-esac
-
 # --- Check types
 # if $newrev is 0000...0000, it's a commit to delete a ref.
 zero="0000000000000000000000000000000000000000"
