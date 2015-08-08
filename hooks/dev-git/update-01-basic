@@ -1,7 +1,5 @@
 #!/bin/sh
 
-egencached_pidfile=/home/mgorny/egencache.pid
-
 # --- Command line
 refname=${1}
 oldrev=${2}
@@ -26,7 +24,7 @@ zero="0000000000000000000000000000000000000000"
 
 case ${refname} in
 	refs/tags/*)
-		echo "*** Tags are not allowed in gx86" >&2
+		echo "*** Tags are not allowed in the gentoo repo" >&2
 		exit 1
 		;;
 	refs/heads/master)
@@ -71,39 +69,13 @@ case ${refname} in
 					echo "*** Metadata is not allowed in the repository"
 					exit 1
 					;;
-			esac
-		done
-
-		# verify that everything on the left-hand side of commit history is signed
-		# (further branches of merges can be unsigned)
-		revs=$(git rev-list --first-parent "${newrev}" "^${oldrev}")
-		for r in ${revs}; do
-			signst=$(git show -q --pretty=format:'%G?' "${r}")
-			case ${signst} in
-				G)
-					;;
-				U)
-					echo "*** Untrusted signature on ${r}, refusing"
-					exit 1
-					;;
-				B)
-					echo "*** Bad signature on ${r}, refusing"
-					exit 1
-					;;
-				N)
-					echo "*** No signature on ${r}, refusing"
-					exit 1
-					;;
-				*)
-					echo "*** Unknown signature status '${signst}', refusing"
+				profiles/use.local.desc)
+					echo "*** Use.local.desc is not allowed in the repository"
 					exit 1
 					;;
 			esac
 		done
 
-		# trigger cache regen
-		# TODO: better do this post-update
-		kill -HUP "$(cat "${egencached_pidfile}")"
 		;;
 	refs/heads/*)
 		# dev branches are fine whatever they are
