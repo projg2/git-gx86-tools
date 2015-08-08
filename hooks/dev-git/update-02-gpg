@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# --- Command line
+refname=${1}
+oldrev=${2}
+newrev=${3}
+
+# --- Safety check
+if [ -z "${GIT_DIR}" ]; then
+	echo "Don't run this script from the command line." >&2
+	echo " (if you want, you could supply GIT_DIR then run" >&2
+	echo "  ${0} <ref> <oldrev> <newrev>)" >&2
+	exit 1
+fi
+
+if [ -z "${refname}" -o -z "${oldrev}" -o -z "${newrev}" ]; then
+	echo "usage: ${0} <ref> <oldrev> <newrev>" >&2
+	exit 1
+fi
+
+# --- Check types
+# if $newrev is 0000...0000, it's a commit to delete a ref.
+zero="0000000000000000000000000000000000000000"
+
+case ${refname} in
+	refs/heads/master)
+
+		IFS='
+'
+
+		# verify that everything on the left-hand side of commit history is signed
+		# (further branches of merges can be unsigned)
+		revs=$(git rev-list --first-parent "${newrev}" "^${oldrev}")
+		for r in ${revs}; do
+			signst=$(git show -q --pretty=format:'%G?' "${r}")
+			case ${signst} in
+				G)
+					;;
+				U)
+					echo "*** Untrusted signature on ${r}, refusing"
+					exit 1
+					;;
+				B)
+					echo "*** Bad signature on ${r}, refusing"
+					exit 1
+					;;
+				N)
+					echo "*** No signature on ${r}, refusing"
+					exit 1
+					;;
+				*)
+					echo "*** Unknown signature status '${signst}', refusing"
+					exit 1
+					;;
+			esac
+		done
+
+		;;
+	*)
+		;;
+esac
+
+# --- Finished
+exit 0
