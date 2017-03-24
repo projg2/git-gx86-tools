@@ -1,0 +1,36 @@
+#!/bin/bash
+# Copyright 2015-2017 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2 or later
+
+# Author: Ulrich Müller <ulm@gentoo.org>
+
+refname=$1
+oldrev=$2
+newrev=$3
+
+# skip non-master commits
+[[ ${refname} == refs/heads/master ]] || exit 0
+
+# Filenames must contain only the characters [A-Za-z0-9._+-] and must
+# not begin with a dot, a hyphen, or a plus sign.
+# https://devmanual.gentoo.org/general-concepts/tree/#what-belongs-in-the-tree%3F
+# https://devmanual.gentoo.org/ebuild-writing/file-format/#file-naming-rules
+export LC_ALL=C
+regex='^([A-Za-z0-9_][A-Za-z0-9._+-]*/)*[A-Za-z0-9_][A-Za-z0-9._+-]*$'
+exceptions=(
+    .gitignore
+    metadata/.gitignore
+)
+
+ret=0
+while IFS= read -r -d $'\0' path; do
+    for e in "${exceptions[@]}"; do
+        [[ ${path} = "${e}" ]] && continue 2
+    done
+    echo "Path \"${path}\" violates file naming rules" >&2
+    ret=1
+done < <(git diff -z --name-only --diff-filter=ACR "${oldrev}" "${newrev}" \
+             | grep -z -Ev -e "${regex}")
+# Preceding line needs >=grep-2.24 for -z working correctly (bug #574662)
+
+exit ${ret}
