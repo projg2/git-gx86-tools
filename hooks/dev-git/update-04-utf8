@@ -1,0 +1,24 @@
+#!/bin/bash
+# Copyright 2017 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2 or later
+
+# Author: Michał Górny <mgorny@gentoo.org>
+
+refname=$1
+oldrev=$2
+newrev=$3
+
+export LC_MESSAGES=C
+
+ret=0
+while read commithash; do
+    # verify that the commit object (including author, committer, commit
+    # message) is valid UTF-8
+    if ! git cat-file -p "${commithash}" | iconv -f utf8 -t utf8 &>/dev/null
+    then
+        echo "Commit ${commithash} contains invalid UTF-8 in the commit metadata"
+        ret=1
+    fi
+done < <(git rev-list "${oldrev}..${newrev}")
+
+exit ${ret}
