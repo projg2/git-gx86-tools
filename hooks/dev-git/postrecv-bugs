@@ -1,0 +1,78 @@
+#!/bin/bash
+# Copyright 2017 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2 or later
+
+# Author: Michał Górny <mgorny@gentoo.org>
+
+export LANG=en_US.UTF-8
+export LC_MESSAGES=C
+export TZ=UTC
+
+shopt -o -s noglob
+
+while read -r oldrev newrev refname; do
+    while read -r commithash; do
+        while read -r l; do
+            case ${l} in
+                # kinda-like github/gitlab/bitbucket but:
+                # 1. we accept only -s forms for simplicity,
+                # 2. we accept only footer-style to avoid false positives,
+                # 3. we have to scan the whole commit message because
+                # developers still fail to have just one footer.
+                Closes:*|Resolves:*|Fixes:*)
+                    close=1;;
+                # alternate form to ref without closing
+                Bug:*)
+                    close=0;;
+                *)
+                    continue;;
+            esac
+
+            # strip whitespace, split words
+            bugref=( ${l#*:} )
+            for bug in "${bugref[@]}"; do
+                case ${bug} in
+                    # long bugzilla URL
+                    http://bugs.gentoo.org/show_bug.cgi\?*|https://bugs.gentoo.org/show_bug.cgi\?*)
+                        bugno=${bug#*[?&]id=}
+                        bugno=${bugno%%[&#]*}
+                        ;;
+                    # short bugzilla URL
+                    http://bugs.gentoo.org/[0-9]*|https://bugs.gentoo.org/[0-9]*)
+                        bugno=${bug##*/}
+                        bugno=${bugno%%[?#]*}
+                        ;;
+                    # silently ignore github, mirror hook will handle it
+                    http://github.com/*|https://github.com/*)
+                        continue;;
+                    *)
+                        echo "WARNING: invalid/unsupported bug ref: ${bug}"
+                        continue;;
+                esac
+
+                if [[ -n ${bugno//[0-9]} ]]; then
+                    echo "WARNING: invalid Gentoo Bugzilla URL: ${bug}"
+                    continue
+                fi
+
+                if [[ ${close} == 1 ]]; then
+                    extra_args=( -s RESOLVED -r FIXED )
+                    newmsg="Bug has been closed via the following commit:"
+                else
+                    extra_args=()
+                    newmsg="Bug has been referenced in the following commit:"
+                fi
+
+                newmsg+="
+    https://gitweb.gentoo.org/${GL_REPO}.git/commit/?id=${commithash}
+
+    $(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
+    # TODO: --show-signature with some nice short output
+
+                bugz modify "${extra_args[@]}" -c "${newmsg}" "${bugno}"
+            done
+        done < <(git show -q --pretty=format:'%B' "${commithash}")
+    done < <(git rev-list "${oldrev}..${newrev}")
+done
+
+exit 0
