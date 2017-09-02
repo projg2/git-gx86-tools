@@ -8,6 +8,7 @@ refname=$1
 oldrev=$2
 newrev=$3
 
+export LANG=en_US.UTF-8
 export LC_MESSAGES=C
 export TZ=UTC
 
