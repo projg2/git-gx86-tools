@@ -64,10 +64,10 @@ while read -r oldrev newrev refname; do
                 fi
 
                 newmsg+="
-    https://gitweb.gentoo.org/${GL_REPO}.git/commit/?id=${commithash}
+https://gitweb.gentoo.org/${GL_REPO}.git/commit/?id=${commithash}
 
-    $(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
-    # TODO: --show-signature with some nice short output
+$(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
+# TODO: --show-signature with some nice short output
 
                 bugz modify "${extra_args[@]}" -c "${newmsg}" "${bugno}"
             done
