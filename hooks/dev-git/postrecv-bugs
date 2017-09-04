@@ -10,7 +10,20 @@ export TZ=UTC
 
 shopt -o -s noglob
 
+ALLOWED_BRANCHES=$(git config --get gentoo.bugs.allowed_branches)
+
 while read -r oldrev newrev refname; do
+    # operate only on branches in gentoo.bugs.allowed_branches
+    # (or 'master' if unset)
+    allowed=0
+    for allowed_branch in ${ALLOWED_BRANCHES:-master}; do
+        if [[ ${refname#refs/heads/} == ${allowed_branch} ]]; then
+            allowed=1
+            break
+        fi
+    done
+    [[ ${allowed} == 0 ]] && continue
+
     while read -r commithash; do
         while read -r l; do
             case ${l} in
