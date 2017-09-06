@@ -10,10 +10,10 @@ export TZ=UTC
 
 shopt -o -s noglob
 
-ALLOWED_BRANCHES=$(git config --get gentoo.bugs.allowed_branches)
+ALLOWED_BRANCHES=$(git config --get gentoo.bugs.allowed-branches)
 
 while read -r oldrev newrev refname; do
-    # operate only on branches in gentoo.bugs.allowed_branches
+    # operate only on branches in gentoo.bugs.allowed-branches
     # (or 'master' if unset)
     allowed=0
     for allowed_branch in ${ALLOWED_BRANCHES:-master}; do
