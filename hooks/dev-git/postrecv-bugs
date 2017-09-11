@@ -12,6 +12,9 @@ shopt -o -s noglob
 
 ALLOWED_BRANCHES=$(git config --get gentoo.bugs.allowed-branches)
 
+declare -A COMMENT_BUGS=()
+declare -A CLOSE_BUGS=()
+
 while read -r oldrev newrev refname; do
     # operate only on branches in gentoo.bugs.allowed-branches
     # (or 'master' if unset)
@@ -68,24 +71,41 @@ while read -r oldrev newrev refname; do
                     continue
                 fi
 
-                if [[ ${close} == 1 ]]; then
-                    extra_args=( -s RESOLVED -r FIXED )
-                    newmsg="Bug has been closed via the following commit:"
-                else
-                    extra_args=()
-                    newmsg="Bug has been referenced in the following commit:"
-                fi
+                newmsg="
 
-                newmsg+="
 https://gitweb.gentoo.org/${GL_REPO}.git/commit/?id=${commithash}
 
 $(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
 # TODO: --show-signature with some nice short output
 
-                bugz modify "${extra_args[@]}" -c "${newmsg}" "${bugno}"
+                if [[ ${close} == 1 ]]; then
+                    CLOSE_BUGS[${bugno}]+=${newmsg}
+                else
+                    COMMENT_BUGS[${bugno}]+=${newmsg}
+                fi
             done
         done < <(git show -q --pretty=format:'%B' "${commithash}")
     done < <(git rev-list "${oldrev}..${newrev}")
+done
+
+for bug in "${!CLOSE_BUGS[@]}"; do
+    msg="The bug has been closed via the following commit(s):${CLOSE_BUGS[${bug}]}"
+
+    if [[ -n ${COMMENT_BUGS[${bug}]} ]]; then
+        msg+="
+
+Additionally, it has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}}"
+    fi
+
+    bugz modify -s RESOLVED -r FIXED -c "${msg}" "${bug}"
+done
+
+for bug in "${!COMMENT_BUGS[@]}"; do
+    [[ -n ${CLOSE_BUGS[${bug}]} ]] && continue
+
+    msg="The bug has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}}"
+
+    bugz modify -c "${msg}" "${bug}"
 done
 
 exit 0
