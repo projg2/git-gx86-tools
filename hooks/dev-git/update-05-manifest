@@ -24,7 +24,7 @@ while read commithash; do
                     echo "Thin Manifests can contain only DIST lines!"
                     echo " commit: ${commithash}"
                     echo "   file: ${fname}"
-                    echo "  entry: ${tag} ${fname} ${size} ${hashes}"
+                    echo "  entry: ${tag} ${mfile} ${size} ${hashes}"
                     ret=1
                     break
                 fi
@@ -38,7 +38,7 @@ while read commithash; do
                         echo "Disallowed hash set in Manifest!"
                         echo " commit: ${commithash}"
                         echo "   file: ${fname}"
-                        echo "  entry: ${tag} ${fname} ${size} ${hashes}"
+                        echo "  entry: ${tag} ${mfile} ${size} ${hashes}"
                         ret=1
                         break
                         ;;
