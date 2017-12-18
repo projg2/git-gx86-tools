@@ -30,7 +30,13 @@ while read commithash; do
                 fi
 
                 case ${hashes} in
-                    *SHA256*SHA512*WHIRLPOOL*)
+                    *SHA256*WHIRLPOOL*)
+                        echo "Disallowed hash set in Manifest!"
+                        echo " commit: ${commithash}"
+                        echo "   file: ${fname}"
+                        echo "  entry: ${tag} ${mfile} ${size} ${hashes}"
+                        ret=1
+                        break
                         ;;
                     *BLAKE2B*SHA512*)
                         ;;
