@@ -54,7 +54,7 @@ while read -r oldrev newrev refname; do
                     split_msg=( ${l//// } )
                     for arch in "${ALL_ARCHES[@]}"; do
                         for word in "${split_msg[@]}"; do
-                            if [[ ${word} == ${arch} ]]; then
+                            if [[ ${word} == ${arch} || ${word} == ALLARCHES ]]; then
                                 uncc_this+=( "${arch}@gentoo.org" )
                                 break
                             fi
