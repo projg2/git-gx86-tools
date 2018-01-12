@@ -144,12 +144,15 @@ for bug in "${!COMMENT_BUGS[@]}"; do
 done
 
 for bug in "${!UNCC_BUGS[@]}"; do
-    is_security=
+    is_kws=
     are_arches_cced=
     is_closed=
     while read -r key colon value; do
-        if [[ ${key} == Product && ${value} == "Gentoo Security" ]]; then
-            is_security=1
+        if [[ ${key} == Component && ${value} == Keywording ]]; then
+            is_kws=1
+            break
+        elif [[ ${key} == Component && ${value} == Stabilization ]]; then
+            is_kws=1
             break
         elif [[ ${key} == Status && ${value} == RESOLVED ]]; then
             is_closed=1
@@ -165,7 +168,7 @@ for bug in "${!UNCC_BUGS[@]}"; do
         fi
     done < <( bugz get -a -n "${bug}" )
 
-    if [[ ! ${is_security} && ! ${are_arches_cced} && ! ${is_closed} ]]; then
+    if [[ ${is_kws} && ! ${are_arches_cced} && ! ${is_closed} ]]; then
         bugz modify -s RESOLVED -r FIXED -c "All arches done, closing." "${bug}"
     fi
 done
