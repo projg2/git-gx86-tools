@@ -14,6 +14,13 @@ ALLOWED_BRANCHES=$(git config --get gentoo.bugs.allowed-branches)
 
 declare -A COMMENT_BUGS=()
 declare -A CLOSE_BUGS=()
+declare -A UNCC_BUGS=()
+
+# things we are allowed to recognize and unCC
+ALL_ARCHES=(
+    alpha amd64 arm hppa ia64 ppc64 ppc x86 arm64
+    amd64-fbsd x86-fbsd m68k mips s390 sh sparc
+)
 
 while read -r oldrev newrev refname; do
     # operate only on branches in gentoo.bugs.allowed-branches
@@ -28,6 +35,7 @@ while read -r oldrev newrev refname; do
     [[ ${allowed} == 0 ]] && continue
 
     while read -r commithash; do
+        uncc_this=()
         while read -r l; do
             case ${l} in
                 # kinda-like github/gitlab/bitbucket but:
@@ -40,6 +48,19 @@ while read -r oldrev newrev refname; do
                 # alternate form to ref without closing
                 Bug:*)
                     close=0;;
+                # try to detect arch team work
+                *[sS]table*|*[sS]tabilize*|*[kK]eyword*)
+                    # recognize common foo/bar/baz form
+                    split_msg=( ${l//// } )
+                    for arch in "${ALL_ARCHES[@]}"; do
+                        for word in "${split_msg[@]}"; do
+                            if [[ ${word} == ${arch} ]]; then
+                                uncc_this+=( "${arch}@gentoo.org" )
+                                break
+                            fi
+                        done
+                    done
+                    continue;;
                 *)
                     continue;;
             esac
@@ -83,6 +104,8 @@ $(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
                 else
                     COMMENT_BUGS[${bugno}]+=${newmsg}
                 fi
+
+                UNCC_BUGS[${bugno}]+=" ${uncc_this[*]}"
             done
         done < <(git show -q --pretty=format:'%B' "${commithash}")
     done < <(git rev-list "${oldrev}..${newrev}")
@@ -97,7 +120,12 @@ for bug in "${!CLOSE_BUGS[@]}"; do
 Additionally, it has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}}"
     fi
 
-    bugz modify -s RESOLVED -r FIXED -c "${msg}" "${bug}"
+    cmd=( bugz modify -s RESOLVED -r FIXED )
+    if [[ -n ${UNCC_BUGS[${bug}]} ]]; then
+        cmd+=( --remove-cc "${UNCC_BUGS[${bug}]}" )
+    fi
+    cmd+=( -c "${msg}" "${bug}" )
+    "${cmd[@]}"
 done
 
 for bug in "${!COMMENT_BUGS[@]}"; do
@@ -105,7 +133,39 @@ for bug in "${!COMMENT_BUGS[@]}"; do
 
     msg="The bug has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}}"
 
-    bugz modify -c "${msg}" "${bug}"
+    cmd=( bugz modify )
+    if [[ -n ${UNCC_BUGS[${bug}]} ]]; then
+        cmd+=( --remove-cc "${UNCC_BUGS[${bug}]}" )
+    fi
+    cmd+=( -c "${msg}" "${bug}" )
+    "${cmd[@]}"
+done
+
+for bug in "${!UNCC_BUGS[@]}"; do
+    is_security=
+    are_arches_cced=
+    is_closed=
+    while read -r key colon value; do
+        if [[ ${key} == Product && ${value} == "Gentoo Security" ]]; then
+            is_security=1
+            break
+        elif [[ ${key} == Status && ${value} == RESOLVED ]]; then
+            is_closed=1
+            break
+        elif [[ ${key} == CC ]]; then
+            # check whether CC contains any arches
+            for arch in "${ALL_ARCHES[@]}"; do
+                if [[ ${value} == *${arch}@gentoo.org* ]]; then
+                    are_arches_cced=1
+                    break
+                fi
+            done
+        fi
+    done < <( bugz get -a -n "${bug}" )
+
+    if [[ ! ${is_security} && ! ${are_arches_cced} && ! ${is_closed} ]]; then
+        bugz modify -s RESOLVED -r FIXED -c "All arches done, closing." "${bug}"
+    fi
 done
 
 exit 0
