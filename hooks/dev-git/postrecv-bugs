@@ -105,7 +105,9 @@ $(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
                     COMMENT_BUGS[${bugno}]+=${newmsg}
                 fi
 
-                UNCC_BUGS[${bugno}]+=" ${uncc_this[*]}"
+                if [[ ${uncc_this[@]} ]]; then
+                    UNCC_BUGS[${bugno}]+=" ${uncc_this[*]}"
+                fi
             done
         done < <(git show -q --pretty=format:'%B' "${commithash}")
     done < <(git rev-list "${oldrev}..${newrev}")
