@@ -106,7 +106,7 @@ $(git show --pretty=fuller --date=iso-local --stat "${commithash}")"
                 fi
 
                 if [[ ${uncc_this[@]} ]]; then
-                    UNCC_BUGS[${bugno}]+=" ${uncc_this[*]}"
+                    UNCC_BUGS[${bugno}]+=" ${uncc_this[*]/#/--remove-cc }"
                 fi
             done
         done < <(git show -q --pretty=format:'%B' "${commithash}")
@@ -124,7 +124,7 @@ Additionally, it has been referenced in the following commit(s):${COMMENT_BUGS[$
 
     cmd=( bugz modify -s RESOLVED -r FIXED )
     if [[ -n ${UNCC_BUGS[${bug}]} ]]; then
-        cmd+=( --remove-cc "${UNCC_BUGS[${bug}]}" )
+        cmd+=( ${UNCC_BUGS[${bug}]} )
     fi
     cmd+=( -c "${msg}" "${bug}" )
     "${cmd[@]}"
@@ -137,7 +137,7 @@ for bug in "${!COMMENT_BUGS[@]}"; do
 
     cmd=( bugz modify )
     if [[ -n ${UNCC_BUGS[${bug}]} ]]; then
-        cmd+=( --remove-cc "${UNCC_BUGS[${bug}]}" )
+        cmd+=( ${UNCC_BUGS[${bug}]} )
     fi
     cmd+=( -c "${msg}" "${bug}" )
     "${cmd[@]}"
