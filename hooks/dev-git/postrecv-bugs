@@ -51,7 +51,7 @@ while read -r oldrev newrev refname; do
                 # try to detect arch team work
                 *[sS]table*|*[sS]tabilize*|*[kK]eyword*)
                     # recognize common foo/bar/baz form
-                    split_msg=( ${l//// } )
+                    split_msg=( ${l//[^a-zA-Z0-9]/ } )
                     for arch in "${ALL_ARCHES[@]}"; do
                         for word in "${split_msg[@]}"; do
                             if [[ ${word} == ${arch} || ${word} == ALLARCHES ]]; then
