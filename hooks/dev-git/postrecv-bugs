@@ -94,7 +94,7 @@ for bug in "${!CLOSE_BUGS[@]}"; do
     if [[ -n ${COMMENT_BUGS[${bug}]} ]]; then
         msg+="
 
-Additionally, it has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}}"
+Additionally, it has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}"
     fi
 
     bugz modify -s RESOLVED -r FIXED -c "${msg}" "${bug}"
@@ -103,7 +103,7 @@ done
 for bug in "${!COMMENT_BUGS[@]}"; do
     [[ -n ${CLOSE_BUGS[${bug}]} ]] && continue
 
-    msg="The bug has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}}"
+    msg="The bug has been referenced in the following commit(s):${COMMENT_BUGS[${bug}]}"
 
     bugz modify -c "${msg}" "${bug}"
 done
