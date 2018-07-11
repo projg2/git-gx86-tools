@@ -32,6 +32,12 @@ case ${refname} in
 		# (further branches of merges can be unsigned)
 		revs=$(git rev-list --first-parent "${newrev}" "^${oldrev}")
 		for r in ${revs}; do
+			committer=$(git show -q --pretty=format:'%ce' "${r}")
+			if [[ ${committer} != *@gentoo.org ]]; then
+				echo "*** Committer address is not @gentoo.org, refusing"
+				exit 1
+			fi
+
 			signst=$(git show -q --pretty=format:'%G?' "${r}")
 			case ${signst} in
 				G)
