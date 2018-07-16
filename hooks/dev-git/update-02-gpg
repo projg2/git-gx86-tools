@@ -18,6 +18,19 @@ if [ -z "${refname}" -o -z "${oldrev}" -o -z "${newrev}" ]; then
 	exit 1
 fi
 
+VERIFY_SIGS=$(git config --get gentoo.verify-signatures)
+: ${VERIFY_SIGS:=gentoo-devs}
+
+case ${VERIFY_SIGS} in
+	gentoo-devs)
+		;;
+	no)
+		;;
+	*)
+		echo "Invalid value of gentoo.verify-signatures" >&2
+		exit 1
+esac
+
 # --- Check types
 # if $newrev is 0000...0000, it's a commit to delete a ref.
 zero="0000000000000000000000000000000000000000"
@@ -33,15 +46,26 @@ case ${refname} in
 		revs=$(git rev-list --first-parent "${newrev}" "^${oldrev}")
 		for r in ${revs}; do
 			committer=$(git show -q --pretty=format:'%ce' "${r}")
-			if [[ ${committer} != *@gentoo.org ]]; then
+			if [[ ${VERIFY_SIGS} == gentoo-devs && ${committer} != *@gentoo.org ]]; then
 				echo "*** Committer address is not @gentoo.org, refusing"
 				exit 1
 			fi
 
 			signst=$(git show -q --pretty=format:'%G?' "${r}")
-			case ${signst} in
-				G)
+			case ${VERIFY_SIGS} in
+				gentoo-devs)
+					# gentoo dev signatures must be Good
+					[[ ${signst} == G ]] && continue
 					;;
+				no)
+					# additionally skip untrusted/impossible to check
+					# when verification is disabled
+					[[ ${signst} == [GUE] ]] && continue
+					;;
+			esac
+
+			# error reporting
+			case ${signst} in
 				U)
 					echo "*** Untrusted signature on ${r}, refusing"
 					exit 1
@@ -52,6 +76,10 @@ case ${refname} in
 					;;
 				N)
 					echo "*** No signature on ${r}, refusing"
+					exit 1
+					;;
+				E)
+					echo "*** Signature cannot be checked on ${r}, refusing"
 					exit 1
 					;;
 				*)
