@@ -23,6 +23,24 @@ VERIFY_SIGS=$(git config --get gentoo.verify-signatures)
 
 case ${VERIFY_SIGS} in
 	gentoo-devs)
+		if [[ ${GL_USER} != *@gentoo.org ]]; then
+			echo "*** Pusher address is not @gentoo.org" >&2
+			echo "    (it is ${GL_USER})" >&2
+			echo "*** Please report this to infra" >&2
+			exit 1
+		fi
+
+		# find key fingerprints in LDAP
+		KEY_FPS=$(ldapsearch "uid=${GL_USER%@gentoo.org}" -D '' -Z -LLL \
+			gpgfingerprint -o ldif-wrap=no | \
+			sed -n -e '/^gpgfingerprint: /{s/^.*://;s/ //g;p}')
+		# create a dedicated GNUPGHOME
+		TMPHOME=$(mktemp -d)
+		trap 'rm -rf "${TMPHOME}"' EXIT
+		# transfer the keys
+		gpg -q --export ${KEY_FPS} | GNUPGHOME=${TMPHOME} gpg -q --import
+		# use new GNUGPHOME to restrict to dev's keys
+		export GNUPGHOME=${TMPHOME}
 		;;
 	no)
 		;;
