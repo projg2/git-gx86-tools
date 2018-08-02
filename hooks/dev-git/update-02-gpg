@@ -37,6 +37,7 @@ case ${VERIFY_SIGS} in
 		# verify GLEP63 compliance
 		HAVE_NONCOMPLIANT=no
 		for K in ${KEY_FPS}; do
+			LC_CTYPE=en_US.UTF-8 \
 			glep63-check -S glep63-2 -k "${K}" || HAVE_NONCOMPLIANT=yes
 		done
 		if [[ ${HAVE_NONCOMPLIANT} == yes ]]; then
