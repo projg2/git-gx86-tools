@@ -1,0 +1,138 @@
+#!/bin/bash
+# Verify that GCO sign-off is present in commit messages
+# Copyright 2018 Michał Górny
+# Distributed under the terms of the GNU General Public License v2 or later
+
+# Disable filename expansion
+set -f
+# Force UTF-8
+export LC_CTYPE=en_US.UTF-8
+# Make == case-insensitive
+shopt -s nocasematch
+
+# --- Command line
+refname=${1}
+oldrev=${2}
+newrev=${3}
+
+# --- Safety check
+if [[ -z ${GIT_DIR} ]]; then
+	echo "Don't run this script from the command line." >&2
+	echo " (if you want, you could supply GIT_DIR then run" >&2
+	echo "  ${0} <ref> <oldrev> <newrev>)" >&2
+	exit 1
+fi
+
+if [[ -z ${refname} || -z ${oldrev} || -z ${newrev} ]]; then
+	echo "usage: ${0} <ref> <oldrev> <newrev>" >&2
+	exit 1
+fi
+
+# Gentoo devs get extra realname checks
+get_from_ldif() {
+	local key=${1}
+	local line
+
+	while read -r line; do
+		case ${line} in
+			"${key}:: "*)
+				# base64-encoded value
+				base64 -d <<<"${line#*:: }"
+				break
+				;;
+			"${key}: "*)
+				echo "${line#*: }"
+				break
+				;;
+		esac
+	done
+}
+
+if [[ ${GL_USER} == *@gentoo.org ]]; then
+	ldif=$(ldapsearch "uid=${GL_USER%@gentoo.org}" -D '' -Z -LLL \
+		cn gecos -o ldif-wrap=no)
+	cn_expected=$(get_from_ldif cn <<<"${ldif}")
+	gecos_expected=$(get_from_ldif gecos <<<"${ldif}")
+
+	if [[ -z ${cn_expected} ]]; then
+		echo "Unable to get cn for ${GL_USER}, please report!" >&2
+		exit 1
+	fi
+	if [[ -z ${gecos_expected} ]]; then
+		echo "Unable to get gecos for ${GL_USER}, please report!" >&2
+		exit 1
+	fi
+fi
+
+ret=0
+
+while read -r commithash; do
+    # verify that the commit message contains Signed-off-by
+	signoff=no
+	committer=$(git show -q --pretty=format:'%ce' "${commithash}")
+
+	while read -r line; do
+		if [[ ${line} == signed-off-by:* ]]; then
+			# verify syntax first.  should be:
+			# Signed-off-by: Real Name <email@address> [(maybe something)]
+			if [[ ${line} != 'signed-off-by: '*' <'*@*.*'>'* ]]; then
+				signoff=syntaxerr
+				break
+			fi
+
+			# if we already found the correct one, just verify syntax
+			# of the rest
+			[[ ${signoff} == ok ]] && continue
+
+			# strip the key
+			line=${line#*: }
+
+			mail=${line#*<}
+			mail=${mail%%>*}
+			# different mail?  try other signoffs, maybe reject.
+			if [[ ${mail} != "${committer}" ]]; then
+				signoff=diffmail
+				continue
+			fi
+
+			# is it the dev?  verify real name then.
+			if [[ ${GL_USER} == *@gentoo.org && ${GL_USER} == "${committer}" ]]; then
+				realname=${line%% <*}
+
+				# require either CN or GECOS to match (to allow
+				# for ASCII spelling)
+				if [[ ${realname} != "${cn_expected}" \
+					&& ${realname} != "${gecos_expected}" ]]
+				then
+					signoff=diffname
+					break
+				fi
+			fi
+
+			signoff=ok
+		fi
+	done < <(git show -q --pretty=format:'%b' "${commithash}")
+
+	case ${signoff} in
+		no)
+			echo "${commithash}: no GCO sign-off present"
+			ret=1;;
+		syntaxerr)
+			echo "${commithash}: malformed sign-off (should be: real name <email>)!"
+			echo "  ${line}"
+			ret=1;;
+		diffmail)
+			echo "${commithash}: no sign-off matching committer's e-mail address found!"
+			echo "  expected: ${committer}"
+			echo "  last found: ${mail}"
+			ret=1;;
+		diffname)
+			echo "${commithash}: name of sign-off does not match realname in LDAP!"
+			echo "  expected: ${cn_expected} (${gecos_expected})"
+			echo "  last found: ${realname}"
+			ret=1;;
+	esac
+done < <(git rev-list "${oldrev}..${newrev}")
+
+# --- Finished
+exit "${ret}"
