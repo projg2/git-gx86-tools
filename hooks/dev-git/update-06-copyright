@@ -80,6 +80,17 @@ while read -r commithash; do
 				break
 			fi
 
+			# verify that DCO-1.1 is not used on licenses directory
+			# (suggested by leio)
+			if [[ ${line} == *DCO[-\ ]1* ]]; then
+				while read -r -d $'\0' filename; do
+					if [[ ${filename} == licenses/* ]]; then
+						signoff=dcolicense
+						break 2
+					fi
+				done < <(git diff -z --name-only "${commithash}^" "${commithash}")
+			fi
+
 			# if we already found the correct one, just verify syntax
 			# of the rest
 			[[ ${signoff} == ok ]] && continue
@@ -120,6 +131,9 @@ while read -r commithash; do
 		syntaxerr)
 			echo "${commithash}: malformed sign-off (should be: real name <email>)!"
 			echo "  ${line}"
+			ret=1;;
+		dcolicense)
+			echo "${commithash}: DCO-1.1 sign-off used on license directory!"
 			ret=1;;
 		diffmail)
 			echo "${commithash}: no sign-off matching committer's e-mail address found!"

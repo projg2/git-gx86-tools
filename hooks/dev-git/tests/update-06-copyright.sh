@@ -42,6 +42,7 @@ FAIL_SYNTAX="*: malformed sign-off (should be: real name <email>)!
 *"
 FAIL_REALNAME="*: name of sign-off does not match realname in LDAP!
 *"
+FAIL_LICENSE="*: DCO-1.1 sign-off used on license directory!"
 
 # Non-developer commit tests (for repos that allow those)
 export GL_USER=nondev@example.com
@@ -95,6 +96,29 @@ git commit --allow-empty -m "A commit
 
 Signed-off-by: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}> (DCO-1.1)" -q
 test_success
+
+eoutdent
+
+einfo "License directory tests"
+eindent
+
+tbegin "GCO sign-off on licenses directory"
+mkdir -p licenses || die
+echo 'Unmodifiable license' > licenses/mylicense || die
+git add licenses/mylicense
+git commit -m "A commit with license
+
+Signed-off-by: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>" -q
+test_success
+
+tbegin "Linux DCO sign-off on licenses directory"
+mkdir -p licenses || die
+echo 'Unmodifiable license' > licenses/mylicense || die
+git add licenses/mylicense
+git commit -m "A commit with license
+
+Signed-off-by: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}> (DCO-1.1)" -q
+test_failure "${FAIL_LICENSE}"
 
 eoutdent
 
