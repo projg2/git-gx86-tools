@@ -48,3 +48,5 @@ test_failure "${FAIL_HASH}"
 tbegin "Testing empty checksum set"
 make_manifest "DIST empty.file 0"
 test_failure "${FAIL_HASH}"
+
+exit "${TEST_RET}"

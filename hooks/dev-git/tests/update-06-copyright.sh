@@ -336,3 +336,5 @@ git merge -q -m "Test merge commit" -q test-branch
 test_failure "${FAIL_NO_SIGNOFF}"
 
 eoutdent
+
+exit "${TEST_RET}"

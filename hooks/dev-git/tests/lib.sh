@@ -3,12 +3,14 @@
 # Copyright 2018 Michał Górny
 # Distributed under the terms of the GNU General Public License v2 or later
 
-. /lib/gentoo/functions.sh
+[[ -z ${RC_GOT_FUNCTIONS} ]] && . /lib/gentoo/functions.sh
 
 die() {
 	echo "died @ ${BASH_SOURCE[1]}:${BASH_LINENO[0]}" >&2
 	exit 1
 }
+
+TEST_RET=0
 
 # Starts a test.  Creates temporary git repo and enters it.
 # $1 - test description (printed)
@@ -53,6 +55,7 @@ run_test() {
 test_success() {
 	run_test
 	tend ${?}
+	: $(( TEST_RET |= ${?} ))
 }
 
 # Run the hook for all commits since the initial commit.
@@ -69,4 +72,5 @@ test_failure() {
 
 	[[ ${msg} == ${expected} ]]
 	tend ${?} "'${msg}' != '${expected}'"
+	: $(( TEST_RET |= ${?} ))
 }
