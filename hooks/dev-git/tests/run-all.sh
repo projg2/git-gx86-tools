@@ -6,6 +6,7 @@
 . /lib/gentoo/functions.sh
 
 TESTS=(
+	update-04-utf8.sh
 	update-05-manifest.sh
 	update-06-copyright.sh
 )
