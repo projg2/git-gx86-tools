@@ -112,8 +112,12 @@ while read -r commithash; do
 
 				# require either CN or GECOS to match (to allow
 				# for ASCII spelling)
+				# also allow for a single comment after the name
+				# e.g. for nickname, requested by jmbsvicetto
 				if [[ ${realname} != "${cn_expected}" \
-					&& ${realname} != "${gecos_expected}" ]]
+					&& ${realname} != "${gecos_expected}" \
+					&& ${realname% (*} != "${cn_expected}" \
+					&& ${realname% (*} != "${gecos_expected}" ]]
 				then
 					signoff=diffname
 					break

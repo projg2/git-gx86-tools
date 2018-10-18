@@ -201,6 +201,12 @@ git commit --allow-empty -m "A commit
 Signed-off-by: ${GIT_COMMITTER_NAME^^} <${GIT_COMMITTER_EMAIL^^}>" -q
 test_success
 
+tbegin "Comment after realname"
+git commit --allow-empty -m "A commit
+
+Signed-off-by: ${GIT_COMMITTER_NAME} (foobarbaz) <${GIT_COMMITTER_EMAIL}>" -q
+test_success
+
 eoutdent
 
 export GIT_AUTHOR_NAME='Somebody Else'
