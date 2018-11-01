@@ -343,4 +343,40 @@ test_failure "${FAIL_NO_SIGNOFF}"
 
 eoutdent
 
+einfo "Branch addition / removal tests"
+eindent
+
+tbegin "Forked branch with sign-off present"
+git checkout -q -b test-branch
+git commit --allow-empty -m "Commit with sign-off
+
+Signed-off-by: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>" -q
+test_branch_success test-branch
+
+tbegin "Forked branch with new non-signed commit"
+git checkout -q -b test-branch
+git commit --allow-empty -m "Commit without sign-off" -q
+test_branch_failure test-branch "${FAIL_NO_SIGNOFF}"
+
+tbegin "Copy of master branch"
+git checkout -q -b test-branch
+test_branch_success test-branch
+
+tbegin "New independent branch with sign-off"
+git checkout --orphan test-branch -q
+git commit --allow-empty -m "Commit with sign-off
+
+Signed-off-by: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>" -q
+test_branch_success test-branch
+
+tbegin "New independent branch without sign-off"
+git checkout --orphan test-branch -q
+git commit --allow-empty -m "Commit without sign-off" -q
+test_branch_failure test-branch "${FAIL_NO_SIGNOFF}"
+
+tbegin "Branch removal"
+test_branch_removal
+
+eoutdent
+
 exit "${TEST_RET}"

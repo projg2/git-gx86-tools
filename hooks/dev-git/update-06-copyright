@@ -66,6 +66,19 @@ fi
 
 ret=0
 
+# special cases
+zeros=0000000000000000000000000000000000000000
+# branch removal
+[[ ${newrev} == "${zeros}" ]] && exit 0
+# new branch; try to find a merge base with master
+if [[ ${oldrev} == "${zeros}" && ${refname} != refs/heads/master ]]; then
+	mergebase=$(git merge-base refs/heads/master "${newrev}")
+	[[ -n ${mergebase} ]] && oldrev=${mergebase}
+fi
+rev_list_arg="${oldrev}..${newrev}"
+# new and no common commit?  gotta check them all
+[[ ${oldrev} == "${zeros}" ]] && rev_list_arg="${newrev}"
+
 while read -r commithash; do
     # verify that the commit message contains Signed-off-by
 	signoff=no
@@ -150,7 +163,7 @@ while read -r commithash; do
 			echo "  last found: ${realname}"
 			ret=1;;
 	esac
-done < <(git rev-list "${oldrev}..${newrev}")
+done < <(git rev-list "${rev_list_arg}")
 
 # --- Finished
 exit "${ret}"

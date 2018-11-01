@@ -50,10 +50,32 @@ run_test() {
 	)
 }
 
+# Run the test for specified branch, presuming it's a new branch.
+# $1 - branch name
+run_test_branch() {
+	local branch=${1}
+
+	(
+		set -- "refs/heads/${branch}" 0000000000000000000000000000000000000000 HEAD
+		set +e
+		. "${HOOK_PATH}"
+	)
+}
+
 # Run the hook for all commits since the initial commit.
 # Expect success.
 test_success() {
 	run_test
+	tend ${?}
+	: $(( TEST_RET |= ${?} ))
+}
+
+# Run the hook presuming new branch is added.
+# Expect success.
+# $1 - branch name
+test_branch_success() {
+	local branch=${1}
+	run_test_branch "${branch}"
 	tend ${?}
 	: $(( TEST_RET |= ${?} ))
 }
@@ -72,5 +94,37 @@ test_failure() {
 
 	[[ ${msg} == ${expected} ]]
 	tend ${?} "'${msg}' != '${expected}'"
+	: $(( TEST_RET |= ${?} ))
+}
+
+# Run the hook presuming new branch is added.
+# Expect failure with message matching the pattern.
+# $1 - branch name
+# $2 - bash pattern to match
+test_branch_failure() {
+	local branch=${1}
+	local expected=${2}
+	local msg
+
+	if msg=$(run_test_branch "${branch}"); then
+		tend 1 "Hook unexpectedly succeeded"
+		return 1
+	fi
+
+	[[ ${msg} == ${expected} ]]
+	tend ${?} "'${msg}' != '${expected}'"
+	: $(( TEST_RET |= ${?} ))
+}
+
+# Run the hook presuming branch is being removed.
+# Expect success (our hooks shouldn't prevent removal).
+test_branch_removal() {
+	(
+		set -- "refs/heads/removed-branch" HEAD 0000000000000000000000000000000000000000
+		set +e
+		. "${HOOK_PATH}"
+	)
+
+	tend ${?}
 	: $(( TEST_RET |= ${?} ))
 }
