@@ -35,14 +35,16 @@ ldapsearch() {
 }
 
 # Error message patterns
-FAIL_NO_SIGNOFF="*: no GCO sign-off present"
-FAIL_EMAIL="*: no sign-off matching committer's e-mail address found!
+FAIL_NO_SIGNOFF="*: missing Signed-off-by on commit
 *"
-FAIL_SYNTAX="*: malformed sign-off (should be: real name <email>)!
+FAIL_EMAIL="*: no Signed-off-by line matching committer's e-mail address found!
 *"
-FAIL_REALNAME="*: name of sign-off does not match realname in LDAP!
+FAIL_SYNTAX="*: malformed Signed-off-by (should be: real name <email>)!
 *"
-FAIL_LICENSE="*: DCO-1.1 sign-off used on license directory!"
+FAIL_REALNAME="*: name in Signed-off-by does not match realname in LDAP!
+*"
+FAIL_LICENSE="*: DCO-1.1 Signed-off-by used on license directory!
+*"
 
 # Non-developer commit tests (for repos that allow those)
 export GL_USER=nondev@example.com

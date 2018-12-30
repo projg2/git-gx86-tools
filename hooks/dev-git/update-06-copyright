@@ -143,27 +143,33 @@ while read -r commithash; do
 
 	case ${signoff} in
 		no)
-			echo "${commithash}: no GCO sign-off present"
+			echo "${commithash}: missing Signed-off-by on commit"
 			ret=1;;
 		syntaxerr)
-			echo "${commithash}: malformed sign-off (should be: real name <email>)!"
+			echo "${commithash}: malformed Signed-off-by (should be: real name <email>)!"
 			echo "  ${line}"
 			ret=1;;
 		dcolicense)
-			echo "${commithash}: DCO-1.1 sign-off used on license directory!"
+			echo "${commithash}: DCO-1.1 Signed-off-by used on license directory!"
 			ret=1;;
 		diffmail)
-			echo "${commithash}: no sign-off matching committer's e-mail address found!"
+			echo "${commithash}: no Signed-off-by line matching committer's e-mail address found!"
 			echo "  expected: ${committer}"
 			echo "  last found: ${mail}"
 			ret=1;;
 		diffname)
-			echo "${commithash}: name of sign-off does not match realname in LDAP!"
+			echo "${commithash}: name in Signed-off-by does not match realname in LDAP!"
 			echo "  expected: ${cn_expected} (${gecos_expected})"
 			echo "  last found: ${realname}"
 			ret=1;;
 	esac
 done < <(git rev-list "${rev_list_arg}")
+
+if [[ ${ret} == 1 ]]; then
+	echo
+	echo "Please make sure to read the copyright policy before adding Signed-off-by!"
+	echo "  https://www.gentoo.org/glep/glep-0076.html"
+fi
 
 # --- Finished
 exit "${ret}"
