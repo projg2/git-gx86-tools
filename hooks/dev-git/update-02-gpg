@@ -35,12 +35,20 @@ case ${VERIFY_SIGS} in
 			gpgfingerprint -o ldif-wrap=no | \
 			sed -n -e '/^gpgfingerprint: /{s/^.*://;s/ //g;p}')
 		# verify GLEP63 compliance
+		GOOD_KEYS=()
 		HAVE_NONCOMPLIANT=no
 		for K in ${KEY_FPS}; do
 			LC_CTYPE=en_US.UTF-8 \
-			glep63-check -S glep63-2 -k "${K}" || HAVE_NONCOMPLIANT=yes
+			glep63-check -S glep63-2 -k "${K}" &&
+				GOOD_KEYS+=( "${K}" ) ||
+				HAVE_NONCOMPLIANT=yes
 		done
-		if [[ ${HAVE_NONCOMPLIANT} == yes ]]; then
+		if [[ ${#GOOD_KEYS[@]} -eq 0 ]]; then
+			echo "*** None of your keys comply with GLEP 63." >&2
+			echo "    Please update the keys into conformance if you wish to continue" >&2
+			echo "    using them. If not, please remove unused keys from LDAP." >&2
+			exit 1
+		elif [[ ${HAVE_NONCOMPLIANT} == yes ]]; then
 			echo "*** Warning. One or more OpenPGP keys do not comply with GLEP 63." >&2
 			echo "    Please update the keys into conformance if you wish to continue" >&2
 			echo "    using them. If not, please remove unused keys from LDAP." >&2
@@ -49,7 +57,7 @@ case ${VERIFY_SIGS} in
 		TMPHOME=$(mktemp -d)
 		trap 'rm -rf "${TMPHOME}"' EXIT
 		# transfer the keys
-		gpg -q --export ${KEY_FPS} | GNUPGHOME=${TMPHOME} gpg -q --import
+		gpg -q --export "${GOOD_KEYS[@]}" | GNUPGHOME=${TMPHOME} gpg -q --import
 		# use new GNUGPHOME to restrict to dev's keys
 		export GNUPGHOME=${TMPHOME}
 		;;
